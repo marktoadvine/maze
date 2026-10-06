@@ -1,13 +1,31 @@
 // Lazy-load audio context to avoid WASM errors during module evaluation
 let audioContext: AudioContext | null = null;
 let audioEnabled = true;
+let muted = false;
+let preferencesLoaded = false;
+let masterGain: GainNode | null = null;
+
+export function getSoundMuted(): boolean {
+  if (!preferencesLoaded && typeof window !== 'undefined') {
+    try { muted = localStorage.getItem('maze.sound-muted') === 'yes'; } catch { /* Optional storage. */ }
+    preferencesLoaded = true;
+  }
+  return muted;
+}
+
+export function setSoundMuted(value: boolean): void {
+  muted = value;
+  preferencesLoaded = true;
+  if (audioContext && masterGain) masterGain.gain.setValueAtTime(value ? 0 : 1, audioContext.currentTime);
+  try { localStorage.setItem('maze.sound-muted', value ? 'yes' : 'no'); } catch { /* Optional storage. */ }
+}
 
 function getAudioContext(): AudioContext | null {
   // Prevent execution during bundler evaluation
   if (typeof window === 'undefined' || typeof document === 'undefined') return null;
   
   // Check if audio is enabled
-  if (!audioEnabled) return null;
+  if (!audioEnabled || getSoundMuted()) return null;
   
   // Check if we're in a browser environment
   if (typeof AudioContext === 'undefined' && typeof (window as any).webkitAudioContext === 'undefined') return null;
@@ -15,12 +33,15 @@ function getAudioContext(): AudioContext | null {
   if (!audioContext) {
     try {
       audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      masterGain = audioContext.createGain();
+      masterGain.connect(audioContext.destination);
     } catch (e) {
       // Failed to create AudioContext - disable audio
       audioEnabled = false;
       return null;
     }
   }
+  if (audioContext.state === 'suspended') void audioContext.resume().catch(() => {});
   return audioContext;
 }
 
@@ -33,7 +54,7 @@ export function playBoopSound() {
     const gainNode = ctx.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(masterGain!);
     
     oscillator.frequency.value = 800;
     oscillator.type = 'sine';
@@ -57,7 +78,7 @@ export function playErrorSound() {
     const gainNode = ctx.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(masterGain!);
     
     oscillator.frequency.value = 200;
     oscillator.type = 'sawtooth';
@@ -84,7 +105,7 @@ export function playWinSound() {
       const gainNode = ctx.createGain();
       
       oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(masterGain!);
       
       oscillator.frequency.value = freq;
       oscillator.type = 'sine';

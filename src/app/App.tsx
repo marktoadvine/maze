@@ -1,101 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CharacterSelect } from './CharacterSelect';
 import { GameBoard } from './GameBoard';
+import { newProgress } from './utils/game';
+import type { CharacterType, GameProgress } from './utils/game';
+import { readSavedGame, saveGame, splashWasSeen } from './utils/storage';
+import { getSoundMuted, setSoundMuted } from './utils/sounds';
 
-type CharacterType = 'girl' | 'boy' | 'duck' | 'bear' | 'dragon' | 'peach';
-type GameState = 'splash' | 'character-select' | 'playing';
+type Screen = 'splash' | 'character-select' | 'playing';
 
 export default function App() {
-  const [isClient, setIsClient] = useState(false);
-  const [gameState, setGameState] = useState<GameState>('splash');
-  const [selectedCharacter, setSelectedCharacter] = useState<CharacterType | null>(null);
+  const [screen, setScreen] = useState<Screen>('splash');
+  const [character, setCharacter] = useState<CharacterType | null>(null);
+  const [progress, setProgress] = useState<GameProgress>(newProgress);
+  const [ready, setReady] = useState(false);
+  const [muted, setMuted] = useState(getSoundMuted);
 
-  // Ensure we're running client-side
   useEffect(() => {
-    setIsClient(true);
+    const saved = readSavedGame();
+    const seen = splashWasSeen();
+    if (saved) {
+      setCharacter(saved.character); setProgress(saved.progress); setScreen('playing');
+    } else if (seen) setScreen('character-select');
+    setReady(true);
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
-    
-    // Show splash screen for 2 seconds
-    const timer = setTimeout(() => {
-      setGameState('character-select');
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, [isClient]);
+    if (!ready || screen !== 'splash') return;
+    const timer = window.setTimeout(() => setScreen('character-select'), 2000);
+    return () => window.clearTimeout(timer);
+  }, [ready, screen]);
 
-  const handleCharacterSelect = (character: CharacterType) => {
-    setSelectedCharacter(character);
-    setGameState('playing');
-  };
+  useEffect(() => {
+    if (ready && character) saveGame(character, progress);
+  }, [ready, character, progress]);
 
-  const handleRestart = () => {
-    setGameState('splash');
-    setSelectedCharacter(null);
-    // Show splash for 2 seconds then go to character select
-    setTimeout(() => {
-      setGameState('character-select');
-    }, 2000);
-  };
-
-  // Don't render until client-side
-  if (!isClient) {
-    return (
-      <div className="size-full bg-zinc-950 flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
-      </div>
-    );
+  function selectCharacter(next: CharacterType) {
+    setCharacter(next); setScreen('playing');
   }
 
   return (
     <div className="size-full bg-zinc-950">
-      {gameState === 'splash' && (
-        <div
-          key="splash"
-          className="flex items-center justify-center min-h-screen bg-zinc-950"
-          style={{ 
-            animation: 'fadeIn 0.5s ease-in-out'
-          }}
-        >
-          <h1 
-            className="text-white tracking-wider" 
-            style={{ 
-              fontSize: '24vw', 
-              fontFamily: "'Kode Mono', monospace",
-              fontWeight: 400,
-              animation: 'fadeIn 0.5s ease-in-out'
-            }}
-          >
-            MAZE
-          </h1>
-        </div>
+      {screen === 'splash' && (
+        <main className="min-h-screen flex items-center justify-center bg-zinc-950 maze-fade">
+          <button className="splash-title text-white tracking-wider" aria-label="Start Maze"
+            onClick={() => setScreen('character-select')}>
+            <h1 style={{ fontSize: '24vw', fontFamily: "'Kode Mono', monospace", fontWeight: 400 }}>MAZE</h1>
+          </button>
+        </main>
       )}
-      
-      {gameState === 'character-select' && (
-        <div
-          key="character-select"
-          className="bg-zinc-950"
-          style={{ 
-            animation: 'fadeIn 0.5s ease-in-out'
-          }}
-        >
-          <CharacterSelect onSelect={handleCharacterSelect} />
-        </div>
+      {ready && screen === 'character-select' && (
+        <CharacterSelect onSelect={selectCharacter} />
       )}
-      
-      {gameState === 'playing' && selectedCharacter && (
-        <div
-          key="playing"
-          className="bg-zinc-950"
-          style={{ 
-            animation: 'fadeIn 0.3s ease-in-out'
-          }}
-        >
-          <GameBoard character={selectedCharacter} onRestart={handleRestart} />
-        </div>
+      {ready && screen === 'playing' && character && (
+        <GameBoard character={character} progress={progress} onProgress={setProgress}
+          onRestart={() => setScreen('character-select')} />
       )}
+      <button className="maze-button sound-toggle" aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+        aria-pressed={muted} onClick={() => {
+          setSoundMuted(!muted); setMuted(!muted);
+        }}>
+        Sound {muted ? 'off' : 'on'}
+      </button>
     </div>
   );
 }

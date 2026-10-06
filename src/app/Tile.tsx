@@ -1,96 +1,52 @@
+import type { ReactNode } from 'react';
+
 interface TileProps {
+  row: number;
+  col: number;
   isActive: boolean;
   isPath: boolean;
   isVisited: boolean;
   isExit: boolean;
-  canExit?: boolean;
-  isPotentialEntry?: boolean;
+  isAvailable: boolean;
+  isStarting: boolean;
+  canExit: boolean;
   isObstacle: boolean;
   onClick: () => void;
-  children?: React.ReactNode;
-  size?: number;
-  isMobile?: boolean;
+  children?: ReactNode;
+  size: number;
 }
 
-export function Tile({ isActive, isPath, isVisited, isExit, canExit, isPotentialEntry, isObstacle, onClick, children, size = 48, isMobile = false }: TileProps) {
-  // Render obstacles as visible blocked tiles
-  if (isObstacle) {
-    return (
-      <div 
-        className="border border-red-900 bg-red-950 flex items-center justify-center"
-        style={{ width: size, height: size, borderRadius: '12px' }}
-      >
-        <div className="w-2 h-2 bg-red-700 rounded-full" />
-      </div>
-    );
-  }
-  
-  // Don't render non-path tiles
-  if (!isPath) {
-    return <div style={{ width: size, height: size }} />;
-  }
-
-  // Don't render visited tiles (they've disappeared)
-  if (isVisited && !isActive) {
-    return <div style={{ width: size, height: size }} />;
-  }
-
+export function Tile({ row, col, isActive, isPath, isVisited, isExit, isAvailable,
+  isStarting, canExit, isObstacle, onClick, children, size }: TileProps) {
+  const dimensions = { width: size, height: size };
+  if (isObstacle) return (
+    <div className="maze-obstacle" style={dimensions} role="img"
+      aria-label={`Row ${row + 1}, column ${col + 1}, blocked`}>
+      <span aria-hidden="true">×</span>
+    </div>
+  );
+  if (!isPath || (isVisited && !isActive)) return <div style={dimensions} aria-hidden="true" />;
+  const label = `Row ${row + 1}, column ${col + 1}${isExit ? ', exit' : ''}${isActive ? ', current position' :
+    isStarting && isAvailable ? ', available start' : isAvailable ? ', available move' : ', unavailable'}`;
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <button
-        onClick={onClick}
-        className={`
-          relative
-          transition-all duration-200
-          ${isActive 
-            ? 'bg-orange-500' 
-            : 'bg-transparent'
-          }
-          ${isActive ? 'hover:bg-orange-600' : 'hover:border-black'}
-          ${!isActive ? 'cursor-pointer' : ''}
-          ${isActive ? 'tile-active' : ''}
-          flex items-center justify-center
-        `}
-        style={{
-          width: size,
-          height: size,
-          transformStyle: 'preserve-3d',
-          borderRadius: '12px',
-          border: isExit ? '2px solid #f97316' : '1px solid #9ca3af',
-          boxShadow: isExit ? '0 0 10px rgba(249, 115, 22, 0.5)' : 'none',
-        }}
-      >
+    <div className="relative" style={dimensions}>
+      <button data-tile={`${row},${col}`} aria-label={label} aria-current={isActive ? 'location' : undefined}
+        disabled={!isAvailable} onClick={onClick}
+        className={`maze-tile ${isActive ? 'is-active tile-active' : ''} ${isAvailable ? 'is-available' : ''}
+          ${isExit ? 'is-exit' : ''} ${isExit && canExit ? 'exit-ready' : ''}`}
+        style={dimensions}>
         {children}
+        {isAvailable && !isActive && <span className="move-dot" aria-hidden="true" />}
       </button>
-      
-      {/* Exit indicator - down arrow below the tile (always shown when exit) */}
       {isExit && (
-        <div 
-          className="absolute left-0 right-0 flex flex-col items-center"
-          style={{ 
-            top: size,
-            height: size * 0.4
-          }}
-        >
-          {/* Down arrow */}
-          <div 
-            className="mt-1 arrow-bounce"
-          >
-            <svg 
-              width={size * 0.4} 
-              height={size * 0.3} 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="#f97316" 
-              strokeWidth="3"
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <polyline points="19 12 12 19 5 12"></polyline>
-            </svg>
-          </div>
-        </div>
+        <span className={`exit-arrow ${canExit ? 'exit-ready' : ''}`} aria-hidden="true"
+          style={{ top: size, height: size * 0.4 }}>
+          <svg className={canExit ? 'arrow-bounce' : ''} width={size * 0.4} height={size * 0.3}
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+            strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14m7-7-7 7-7-7" />
+          </svg>
+        </span>
       )}
     </div>
   );

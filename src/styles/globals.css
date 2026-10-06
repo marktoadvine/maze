@@ -269,3 +269,103 @@ html {
 .avatar-float {
   animation: avatarFloat 2s ease-in-out infinite;
 }
+
+/* Game-specific styles keep the board quiet while making available moves clear. */
+.maze-fade { animation: fadeIn 0.3s ease-in-out; }
+.maze-game {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 170px 16px 80px;
+}
+.maze-header { position: absolute; top: 16px; left: 16px; right: 16px; }
+.maze-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid #9ca3af;
+  border-radius: 24px;
+  padding: 10px 12px;
+}
+.maze-button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid #9ca3af;
+  border-radius: 24px;
+  background: #09090b;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+.maze-button:hover { background: #f97316; color: #09090b; border-color: #f97316; }
+.maze-instructions { color: #9ca3af; font-size: 0.875rem; margin: 14px 0 0 4px; }
+.maze-board { padding: 8px 8px 36px; border-radius: 16px; perspective: 1000px; }
+.maze-avatar-slot { display: flex; align-items: flex-start; justify-content: center; }
+.maze-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #9ca3af;
+  border-radius: 12px;
+  background: transparent;
+  color: #9ca3af;
+  position: relative;
+  transition: background-color 150ms, border-color 150ms, box-shadow 150ms;
+}
+.maze-tile:disabled { cursor: default; }
+.maze-tile.is-available { border-color: #e4e4e7; background: #18181b; cursor: pointer; }
+.maze-tile.is-available:hover { background: #27272a; box-shadow: 0 0 0 1px #e4e4e7; }
+.move-dot { width: 5px; height: 5px; border-radius: 50%; background: #a1a1aa; }
+.maze-tile.is-active { background: #f97316; border-color: #f97316; }
+.maze-tile.is-exit { border: 2px solid #f97316; }
+.maze-tile.exit-ready { background: #431407; box-shadow: 0 0 12px #f9731655; }
+.maze-obstacle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #7f1d1d;
+  border-radius: 12px;
+  background: #450a0a;
+  color: #f87171;
+}
+.exit-arrow { position: absolute; left: 0; right: 0; display: flex; justify-content: center; color: #f97316; opacity: 0.5; padding-top: 4px; }
+.exit-arrow.exit-ready { opacity: 1; }
+.maze-status { text-align: center; font-size: 0.875rem; max-width: 480px; min-height: 48px; margin-top: 8px; }
+.sound-toggle { position: fixed; bottom: 16px; right: 16px; z-index: 20; }
+.maze-win-dialog {
+  background: #09090bf2;
+  color: #9ca3af;
+  border: 1px solid #9ca3af;
+  border-radius: 24px;
+  width: calc(100% - 64px);
+  height: calc(100dvh - 64px);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 32px;
+}
+.maze-win-dialog::backdrop { background: #0009; }
+.maze-win-content { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 24px; height: 100%; }
+.maze-next { padding: 12px 24px; font-size: 1.125rem; }
+.splash-title { cursor: pointer; border: 0; background: transparent; }
+button:focus-visible, .maze-board:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 4px;
+}
+@media (max-width: 767px) {
+  .maze-game { padding-top: 210px; justify-content: flex-start; }
+  .maze-toolbar { width: 100%; gap: 8px; }
+  .maze-button { padding: 8px 10px; font-size: 0.75rem; }
+  .maze-win-dialog { width: calc(100% - 32px); height: calc(100dvh - 32px); padding: 24px; }
+  .maze-next { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

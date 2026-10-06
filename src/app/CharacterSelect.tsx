@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { playBoopSound } from './utils/sounds';
 
 type CharacterType = 'girl' | 'boy' | 'duck' | 'bear' | 'dragon' | 'peach';
@@ -9,24 +9,29 @@ interface CharacterSelectProps {
 
 export function CharacterSelect({ onSelect }: CharacterSelectProps) {
   const [hoveredChar, setHoveredChar] = useState<string | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { headingRef.current?.focus(); }, []);
+
+  const select = (character: CharacterType) => { playBoopSound(); onSelect(character); };
 
   const handleRandomSelect = () => {
     const randomChars: CharacterType[] = ['duck', 'bear', 'dragon', 'peach'];
-    const index = Math.floor((typeof window !== 'undefined' && window.performance ? window.performance.now() : 0)) % randomChars.length;
+    const index = Math.floor(Math.random() * randomChars.length);
     const randomChar = randomChars[index];
-    onSelect(randomChar);
+    select(randomChar);
   };
 
   const handleHover = (char: string) => {
-    playBoopSound();
     setHoveredChar(char);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 p-4 sm:p-8">
-      <div className="flex gap-3 sm:gap-8 justify-center items-center">
+    <main className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 p-4 sm:p-8 maze-fade">
+      <h1 ref={headingRef} tabIndex={-1} className="text-gray-400 text-sm mb-6">Choose your character</h1>
+      <div className="flex flex-wrap gap-3 sm:gap-8 justify-center items-center">
         <button
-          onClick={() => onSelect('girl')}
+          aria-label="Choose girl"
+          onClick={() => select('girl')}
           onMouseEnter={() => handleHover('girl')}
           onMouseLeave={() => setHoveredChar(null)}
           className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-6 transition-all ${
@@ -40,7 +45,8 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
         </button>
 
         <button
-          onClick={() => onSelect('boy')}
+          aria-label="Choose boy"
+          onClick={() => select('boy')}
           onMouseEnter={() => handleHover('boy')}
           onMouseLeave={() => setHoveredChar(null)}
           className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-6 transition-all ${
@@ -55,6 +61,7 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
 
         <button
           onClick={handleRandomSelect}
+          aria-label="Choose a surprise character"
           onMouseEnter={() => handleHover('random')}
           onMouseLeave={() => setHoveredChar(null)}
           className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-6 transition-all ${
@@ -67,7 +74,7 @@ export function CharacterSelect({ onSelect }: CharacterSelectProps) {
           </div>
         </button>
       </div>
-    </div>
+    </main>
   );
 }
 
